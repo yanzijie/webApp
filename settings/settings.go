@@ -4,16 +4,56 @@ import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
+
+	_ "github.com/mitchellh/mapstructure"
 )
 
 // 配置文件加载
 
-func Init() (err error) {
-	viper.SetConfigName("config") // 配置文件名称(无扩展名)
-	viper.SetConfigType("yaml")   // 如果配置文件的名称中没有扩展名，则需要配置此项
-	viper.AddConfigPath(".")      // 在当前路径查找
+var Conf = new(AppConfig)
 
-	// 把配置读取到 viper对象中
+type AppConfig struct {
+	Name         string `mapstructure:"name"`
+	Mode         string `mapstructure:"mode"`
+	Version      string `mapstructure:"version"`
+	Port         int    `mapstructure:"port"`
+	*LogConfig   `mapstructure:"log"`
+	*MySqlConfig `mapstructure:"mysql"`
+	*RedisConfig `mapstructure:"redis"`
+}
+
+type LogConfig struct {
+	Level      string `mapstructure:"level"`
+	Filename   string `mapstructure:"filename"`
+	MaxSize    int    `mapstructure:"max_size"`
+	MaxAge     int    `mapstructure:"max_age"`
+	MaxBackups int    `mapstructure:"max_backups"`
+}
+
+type MySqlConfig struct {
+	Host        string `mapstructure:"host"`
+	Port        int    `mapstructure:"port"`
+	User        string `mapstructure:"user"`
+	Password    string `mapstructure:"password"`
+	DbName      string `mapstructure:"dbname"`
+	MaxOpenConn int    `mapstructure:"max_open_conn"`
+	MaxIdleConn int    `mapstructure:"max_idle_conn"`
+}
+
+type RedisConfig struct {
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	Password string `mapstructure:"password"`
+	Db       int    `mapstructure:"db"`
+	PoolSize int    `mapstructure:"pool_size"`
+}
+
+func Init() (err error) {
+	viper.SetConfigFile("config.yaml")
+	//viper.SetConfigName("config") // 配置文件名称(无扩展名),如果有config.json和config.yaml,那就是先找到什么用什么
+	//viper.SetConfigType("yaml")   // 专用于从远程加载配置文件时，指定文件类型
+	viper.AddConfigPath(".") // 在当前路径查找
+
 	if err = viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// ok 的话，说明配置文件没找到
@@ -24,13 +64,17 @@ func Init() (err error) {
 		}
 		return err
 	}
+	if err = viper.Unmarshal(Conf); err != nil {
+		fmt.Println("Unmarshal to Conf error:", err)
+	}
 
 	// 实时监控配置文件
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
 		// 配置文件发生变更之后会调用的回调函数
-		// do some thing, 比如重新给配置文件变量赋值
-		fmt.Println("config content has change")
+		if err = viper.Unmarshal(Conf); err != nil {
+			fmt.Println("Unmarshal to Conf when config change error:", err)
+		}
 	})
 
 	return

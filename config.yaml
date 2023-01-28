@@ -1,15 +1,13 @@
-app:
-  name: "webApp"
-  mode: "dev"
-  port: 8081
-
+name: "webApp"
+mode: "dev"
+port: 8080
+version: "v0.0.1"
 log:
   level: "debug"
   filename: "webApp.log"
   max_size: 200
   max_age: 30
   max_backups: 7
-
 mysql:
   host: "127.0.0.1"
   port: 3306
@@ -18,7 +16,6 @@ mysql:
   dbname: "testDB"
   max_open_conn: 20
   max_idle_conn: 20
-
 redis:
   host: "localhost"
   port: 6379

@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/spf13/viper"
 	"github.com/yanzijie/webApp/dao/mysql"
 	"github.com/yanzijie/webApp/dao/redis"
 	"github.com/yanzijie/webApp/logger"
@@ -30,7 +29,7 @@ func main() {
 	}
 
 	// 2.初始化日志
-	if err = logger.InitConsole(); err != nil {
+	if err = logger.InitFile(settings.Conf.LogConfig); err != nil {
 		fmt.Println("init logger failed, err:", err)
 		return
 	}
@@ -38,7 +37,7 @@ func main() {
 	zap.L().Info("logger init success...")
 
 	// 3.初始化mysql
-	if err = mysql.Init(); err != nil {
+	if err = mysql.Init(settings.Conf.MySqlConfig); err != nil {
 		fmt.Println("init mysql failed, err:", err)
 		return
 	}
@@ -46,7 +45,7 @@ func main() {
 	zap.L().Info("mysql init success...")
 
 	// 4.初始化redis
-	if err = redis.Init(); err != nil {
+	if err = redis.Init(settings.Conf.RedisConfig); err != nil {
 		fmt.Println("init redis failed, err:", err)
 		return
 	}
@@ -57,7 +56,7 @@ func main() {
 	r := routes.Setup()
 	// 6.启动服务 - 优雅的关机
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", viper.GetInt("app.port")),
+		Addr:    fmt.Sprintf(":%d", settings.Conf.Port),
 		Handler: r,
 	}
 

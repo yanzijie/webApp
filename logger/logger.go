@@ -1,7 +1,7 @@
 package logger
 
 import (
-	"github.com/spf13/viper"
+	"github.com/yanzijie/webApp/settings"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -28,14 +28,16 @@ func InitConsole() (err error) {
 }
 
 // InitFile 初始化Logger,输出到文件到文件
-func InitFile() (err error) {
-	writeSyncer := getLogWriter(viper.GetString("log.filename"),
-		viper.GetInt("log.max_size"),    // 在进行切割之前，日志文件的最大大小（以MB为单位）
-		viper.GetInt("log.max_backups"), // 保留旧文件的最大个数
-		viper.GetInt("log.max_age"))     // 保留旧文件的最大天数
+func InitFile(cfg *settings.LogConfig) (err error) {
+	writeSyncer := getLogWriter(
+		cfg.Filename,
+		cfg.MaxSize,    // 在进行切割之前，日志文件的最大大小（以MB为单位）
+		cfg.MaxBackups, // 保留旧文件的最大个数
+		cfg.MaxAge,     // 保留旧文件的最大天数
+	)
 	encoder := getEncoder()
 	var l = new(zapcore.Level)
-	err = l.UnmarshalText([]byte(viper.GetString("log.level")))
+	err = l.UnmarshalText([]byte(cfg.Level))
 	if err != nil {
 		return
 	}
