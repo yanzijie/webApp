@@ -13,6 +13,7 @@ func Init() (err error) {
 	viper.SetConfigType("yaml")   // 如果配置文件的名称中没有扩展名，则需要配置此项
 	viper.AddConfigPath(".")      // 在当前路径查找
 
+	// 把配置读取到 viper对象中
 	if err = viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// ok 的话，说明配置文件没找到
