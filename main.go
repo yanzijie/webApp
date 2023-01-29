@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"github.com/yanzijie/webApp/dao/mysql"
 	"github.com/yanzijie/webApp/dao/redis"
@@ -21,15 +22,22 @@ import (
 
 func main() {
 	var err error
+	var configPath string
+	flag.StringVar(&configPath, "config", "./config.yaml", "配置文件路径")
+	flag.Parse()
 
 	// 1.加载配置
-	if err = settings.Init(); err != nil {
+	if err = settings.Init(configPath); err != nil {
 		fmt.Println("init settings failed, err:", err)
 		return
 	}
 
 	// 2.初始化日志
-	if err = logger.InitFile(settings.Conf.LogConfig); err != nil {
+	//if err = logger.InitFile(settings.Conf.LogConfig); err != nil {
+	//	fmt.Println("init logger failed, err:", err)
+	//	return
+	//}
+	if err = logger.InitConsole(); err != nil {
 		fmt.Println("init logger failed, err:", err)
 		return
 	}
