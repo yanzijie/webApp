@@ -2,6 +2,7 @@ name: "webApp"
 mode: "dev"
 port: 8080
 version: "v0.0.1"
+log_type: "console"
 log:
   level: "debug"
   filename: "webApp.log"

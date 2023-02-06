@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"github.com/yanzijie/webApp/settings"
 	"net"
 	"net/http"
@@ -20,15 +21,8 @@ import (
 
 var lg *zap.Logger
 
-// InitConsole 初始化Logger,简单的输出到终端
-func InitConsole() (err error) {
-	lg, _ = zap.NewProduction()
-	zap.ReplaceGlobals(lg) // 替换zap包中全局的logger实例，后续在其他包中只需使用zap.L()调用即可
-	return
-}
-
-// InitFile 初始化Logger,输出到文件到文件
-func InitFile(cfg *settings.LogConfig) (err error) {
+// Init 初始化Logger,输出到文件到文件
+func Init(cfg *settings.LogConfig) (err error) {
 	writeSyncer := getLogWriter(
 		cfg.Filename,
 		cfg.MaxSize,    // 在进行切割之前，日志文件的最大大小（以MB为单位）
@@ -39,9 +33,30 @@ func InitFile(cfg *settings.LogConfig) (err error) {
 	var l = new(zapcore.Level)
 	err = l.UnmarshalText([]byte(cfg.Level))
 	if err != nil {
+		fmt.Println("Init Log UnmarshalText error:", err.Error())
 		return
 	}
-	core := zapcore.NewCore(encoder, writeSyncer, l)
+
+	var core zapcore.Core
+	if settings.Conf.LogType == "all" {
+		// 打印到文件和终端
+		consoleEncoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+		// 设置两个级别,日志会写到文件，debug级别以上的同时也会写到终端
+		core = zapcore.NewTee(
+			zapcore.NewCore(encoder, writeSyncer, l),
+			zapcore.NewCore(consoleEncoder, zapcore.Lock(os.Stdout), zapcore.DebugLevel),
+		)
+	} else if settings.Conf.LogType == "console" {
+		// 打印到终端
+		consoleEncoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+		core = zapcore.NewTee(
+			zapcore.NewCore(consoleEncoder, zapcore.Lock(os.Stdout), zapcore.DebugLevel),
+		)
+	} else if settings.Conf.LogType == "file" {
+		// 打印到文件
+		core = zapcore.NewCore(encoder, writeSyncer, l)
+	}
+
 	// zap.AddCaller(): 添加将调用函数信息记录到日志中的功能
 	lg = zap.New(core, zap.AddCaller())
 	zap.ReplaceGlobals(lg) // 替换zap包中全局的logger实例，后续在其他包中只需使用zap.L()调用即可
